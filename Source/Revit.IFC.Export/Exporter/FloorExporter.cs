@@ -63,6 +63,7 @@ namespace Revit.IFC.Export.Exporter
                {
                   using (IFCExtrusionCreationData ecData = new IFCExtrusionCreationData())
                   {
+                     // bool exportParts = PartExporter.CanExportParts(slabElement) || ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView;
                      bool exportParts = PartExporter.CanExportParts(slabElement);
 
                      IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
@@ -154,6 +155,7 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          // export parts or not
+         //bool exportParts = PartExporter.CanExportParts(floorElement) || ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView;
          bool exportParts = PartExporter.CanExportParts(floorElement);
          if (exportParts && !PartExporter.CanExportElementInPartExport(floorElement, floorElement.LevelId, false))
             return;

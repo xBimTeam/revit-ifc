@@ -629,16 +629,16 @@ namespace Revit.IFC.Export.Exporter
 
          Document doc = element.Document;
          using (SubTransaction tempPartTransaction = new SubTransaction(doc))
-         { 
+         {
             // For IFC4RV export, wall will be split into its parts (temporarily) in order to export the wall by its parts
-            //if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
-            //{
-            //   ICollection<ElementId> ids = new List<ElementId>() { element.Id };
-            //   PartUtils.CreateParts(doc, ids);
-            //   doc.Regenerate();
-            //}
+            if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+            {
+               ICollection<ElementId> ids = new List<ElementId>() { element.Id };
+               PartUtils.CreateParts(doc, ids);
+               doc.Regenerate();
+            }
 
-            bool exportParts = PartExporter.CanExportParts(element);
+            bool exportParts = PartExporter.CanExportParts(element) || ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView;
             if (exportParts && !PartExporter.CanExportElementInPartExport(element, validRange ? overrideLevelId : element.LevelId, validRange))
             {
                if (tempPartTransaction.HasStarted())
@@ -1181,9 +1181,9 @@ namespace Revit.IFC.Export.Exporter
 
                         SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, wallHnd, element.Id, wallLevelId);
 
-                        tr.Commit();
                         if (tempPartTransaction.HasStarted())
                            tempPartTransaction.RollBack();
+                        tr.Commit();
                         return wallHnd;
                      }
                   }

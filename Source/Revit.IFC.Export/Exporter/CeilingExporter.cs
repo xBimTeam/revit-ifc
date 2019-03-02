@@ -65,6 +65,7 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="productWrapper">The ProductWrapper.</param>
       public static void ExportCovering(ExporterIFC exporterIFC, Element element, GeometryElement geomElem, string ifcEnumType, ProductWrapper productWrapper)
       {
+         //bool exportParts = PartExporter.CanExportParts(element) || ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView;
          bool exportParts = PartExporter.CanExportParts(element);
          if (exportParts && !PartExporter.CanExportElementInPartExport(element, element.LevelId, false))
             return;

@@ -160,6 +160,7 @@ namespace Revit.IFC.Export.Exporter
          using (IFCTransaction tr = new IFCTransaction(file))
          {
             // export parts or not
+            //bool exportParts = PartExporter.CanExportParts(roof) || ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView;
             bool exportParts = PartExporter.CanExportParts(roof);
             bool exportAsCurtainRoof = CurtainSystemExporter.IsCurtainSystem(roof);
 
