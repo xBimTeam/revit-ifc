@@ -360,8 +360,11 @@ namespace Revit.IFC.Export.Exporter
 
          int numOfOtherElement = otherElementCollector.Count<Element>();
          int otherElementCollectorCount = 1;
-         foreach (Element element in otherElementCollector)
+         IList<Element> otherElementsList = otherElementCollector.ToElements();
+         //foreach (Element element in otherElementCollector)
+         for (int ii=0; ii<numOfOtherElement; ++ii)
          {
+            Element element = otherElementsList[ii];
             statusBar.Set(String.Format(Resources.IFCProcessingNonSpatialElements, otherElementCollectorCount, numOfOtherElement, element.Id));
             otherElementCollectorCount++;
             ExportElement(exporterIFC, element);
@@ -2141,10 +2144,10 @@ namespace Revit.IFC.Export.Exporter
          if (transformBasis == ExportOptionsCache.SiteTransformBasis.Shared)
          {
             wcs = IFCInstanceExporter.CreateAxis2Placement3D(file, wcsOrigin, null, null);
+            ExporterUtil.GetSafeProjectPositionAngle(doc, out trueNorthAngleInRadians);
          }
          else
          {
-            ExporterUtil.GetSafeProjectPositionAngle(doc, out trueNorthAngleInRadians);
             ProjectLocation projLocation = doc.ActiveProjectLocation;
             Transform siteSharedCoordinatesTrf = projLocation == null ? Transform.Identity : projLocation.GetTransform().Inverse;
             XYZ unscaledOrigin = new XYZ(0, 0, 0);

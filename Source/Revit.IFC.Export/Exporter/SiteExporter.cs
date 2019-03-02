@@ -217,7 +217,8 @@ namespace Revit.IFC.Export.Exporter
                      siteSharedCoordinatesTrf = Transform.CreateTranslation(new XYZ(-xyz.X, -xyz.Y, unscaledElevation - xyz.Z));
                   }
                   else
-                     siteSharedCoordinatesTrf = projLocation.GetTransform().Inverse;
+                     // Only the origin is to be considered here. The orientation part will be icluded in the true north. The site orientation will always follow Revit basepoint
+                     siteSharedCoordinatesTrf = Transform.CreateTranslation(projLocation.GetTransform().Inverse.Origin);
                }
 
                if (!siteSharedCoordinatesTrf.IsIdentity)
