@@ -34,6 +34,7 @@ namespace Revit.IFC.Export.Utility
    public class TriangleMergeUtil
    {
       static TriangulatedShellComponent _geom;
+      static IDictionary<int, XYZ> _geomVertices = new Dictionary<int, XYZ>();
       static Mesh _meshGeom;
       static IDictionary<int, XYZ> _meshVertices = new Dictionary<int, XYZ>();
       
@@ -57,6 +58,11 @@ namespace Revit.IFC.Export.Utility
       public TriangleMergeUtil(TriangulatedShellComponent triangulatedBody)
       {
          _geom = triangulatedBody;
+         _geomVertices.Clear();
+         for (int idx=0; idx<_geom.VertexCount; ++idx)
+         {
+            _geomVertices.Add(idx, _geom.GetVertex(idx));
+         }
          _meshGeom = null;
       }
 
@@ -161,7 +167,7 @@ namespace Revit.IFC.Export.Utility
                if (IsMesh)
                   return _meshVertices[startPindex].DistanceTo(_meshVertices[endPIndex]);
                else
-                  return _geom.GetVertex(startPindex).DistanceTo(_geom.GetVertex(endPIndex));
+                  return _geomVertices[startPindex].DistanceTo(_geomVertices[endPIndex]);
             }
          }
 
@@ -224,7 +230,7 @@ namespace Revit.IFC.Export.Utility
                if (IsMesh)
                   vertices.Add(_meshVertices[idx]);
                else
-                  vertices.Add(_geom.GetVertex(idx));
+                  vertices.Add(_geomVertices[idx]);
             }
             normal = NormalByNewellMethod(vertices);
          }
@@ -265,7 +271,7 @@ namespace Revit.IFC.Export.Utility
                if (IsMesh)
                   vertices.Add(_meshVertices[idx]);
                else
-                  vertices.Add(_geom.GetVertex(idx));
+                  vertices.Add(_geomVertices[idx]);
             }
             normal = NormalByNewellMethod(vertices);
          }
@@ -297,8 +303,13 @@ namespace Revit.IFC.Export.Utility
                return -1;
          }
 
-         IList<IndexSegment> setupEdges(IList<int> vertxIndices)
+         IList<IndexSegment> setupEdges(IList<int> vIndices)
          {
+            IDictionary<int, int> vertexIndices = new Dictionary<int, int>();
+            int idx = 0;
+            foreach (int vIdx in vIndices)
+               vertexIndices.Add(idx++, vIdx);
+
             IList<IndexSegment> indexList = new List<IndexSegment>();
             int boundLinesDictOffset = 0;
 
@@ -310,17 +321,17 @@ namespace Revit.IFC.Export.Utility
             else
                boundLinesDictOffset = boundaryLinesDict.Count();
 
-            for (int ii = 0; ii < vertxIndices.Count; ++ii)
+            for (int ii = 0; ii < vertexIndices.Count; ++ii)
             {
                IndexSegment segm;
-               if (ii == vertxIndices.Count - 1)
+               if (ii == vertexIndices.Count - 1)
                {
-                  segm = new IndexSegment(vertxIndices[ii], vertxIndices[0]);
+                  segm = new IndexSegment(vertexIndices[ii], vertexIndices[0]);
 
                }
                else
                {
-                  segm = new IndexSegment(vertxIndices[ii], vertxIndices[ii + 1]);
+                  segm = new IndexSegment(vertexIndices[ii], vertexIndices[ii + 1]);
                }
                indexList.Add(segm);
                boundaryLinesDict.Add(segm, ii + boundLinesDictOffset);       // boundaryLinesDict is a dictionary for the combined outer and inner boundaries, the values should be sequential
