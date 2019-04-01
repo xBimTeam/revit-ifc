@@ -300,8 +300,8 @@ namespace Revit.IFC.Export.Exporter
             partExportLevelId = hostElement.LevelId;
          }
 
-         if (ExporterCacheManager.PartExportedCache.HasExported(partElement.Id, partExportLevelId))
-            return;
+         //if (ExporterCacheManager.PartExportedCache.HasExported(partElement.Id, partExportLevelId))
+         //   return;
 
          Options options = GeometryUtil.GetIFCExportGeometryOptions();
          View ownerView = partElement.Document.GetElement(partElement.OwnerViewId) as View;
@@ -331,7 +331,20 @@ namespace Revit.IFC.Export.Exporter
                }
                else
                {
-                  //partPlacement = ExporterUtil.CreateLocalPlacement(file, null, null);
+                  // This part needs explaination:
+                  // The geometry of the Part is against the Project base, while the host element already contains all the IFC transforms relative to its container
+                  // To "correct" the placement so that the Part is correctly relative to the host, we need to inverse transform the Part to the host's placement 
+                  IFCAnyHandle hostHandle = ExporterCacheManager.ElementToHandleCache.Find(hostElement.Id);
+                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(hostHandle))
+                  {
+                     if (originalPlacement == null)
+                     {
+                        originalPlacement = IFCAnyHandleUtil.GetObjectPlacement(hostHandle);
+                     }
+                     Transform hostTrf = ExporterUtil.GetTransformFromLocalPlacementHnd(originalPlacement);
+                     hostTrf = ExporterUtil.UnscaleTransformOrigin(hostTrf);
+                     geometryElement = GeometryUtil.GetTransformedGeometry(geometryElement, hostTrf.Inverse);
+                  }
                   partPlacement = ExporterUtil.CreateLocalPlacement(file, originalPlacement, null);
                }
 
@@ -469,7 +482,7 @@ namespace Revit.IFC.Export.Exporter
                       extrusionCreationData.GetLocalPlacement(), whichPlacementSetter, productWrapper);
 
                   //Add the exported part to exported cache.
-                  TraceExportedParts(partElement, partExportLevelId, standaloneExport ? ElementId.InvalidElementId : hostElement.Id);
+                  //TraceExportedParts(partElement, partExportLevelId, standaloneExport ? ElementId.InvalidElementId : hostElement.Id);
 
                   CategoryUtil.CreateMaterialAssociation(exporterIFC, ifcPart, bodyData.MaterialIds);
 
