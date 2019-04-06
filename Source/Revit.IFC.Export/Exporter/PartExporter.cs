@@ -507,11 +507,11 @@ namespace Revit.IFC.Export.Exporter
       {
          if (!ExporterCacheManager.PartExportedCache.HasRegistered(partElement.Id))
          {
-            Dictionary<ElementId, ElementId> hostOverideLevels = new Dictionary<ElementId, ElementId>();
+            Dictionary<ElementId, ElementId> hostOverrideLevels = new Dictionary<ElementId, ElementId>();
 
-            if (!hostOverideLevels.ContainsKey(partExportLevel))
-               hostOverideLevels.Add(partExportLevel, hostElementId);
-            ExporterCacheManager.PartExportedCache.Register(partElement.Id, hostOverideLevels);
+            if (!hostOverrideLevels.ContainsKey(partExportLevel))
+               hostOverrideLevels.Add(partExportLevel, hostElementId);
+            ExporterCacheManager.PartExportedCache.Register(partElement.Id, hostOverrideLevels);
          }
          else
          {
@@ -744,7 +744,7 @@ namespace Revit.IFC.Export.Exporter
          BoundingBoxXYZ boundingBox = part.get_BoundingBox(null);
 
          // The levels should have been sorted.
-         IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.BuildingStoreysByElevation;
+         IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.BuildingStoriesByElevation;
          // Find the nearest bottom level.
          foreach (ElementId levelId in levelIds)
          {
