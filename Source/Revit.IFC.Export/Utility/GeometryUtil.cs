@@ -558,12 +558,12 @@ namespace Revit.IFC.Export.Utility
          // iterate through the GeometryObjects contained in the GeometryElement
          foreach (GeometryObject geomObj in currGeomElem)
          {
-            Solid solid = geomObj as Solid;
-            if (solid != null && solid.Faces.Size > 0)
+            Solid geometryObject = geomObj as Solid;
+            if (geometryObject != null && geometryObject.Faces.Size > 0)
             {
                try
                {
-                  if (solid.Volume <= MathUtil.Eps() && solid.Faces.Size == 0)
+                  if (geometryObject.Volume <= MathUtil.Eps() && geometryObject.Faces.Size == 0)
                      continue;
                }
                catch
@@ -571,8 +571,9 @@ namespace Revit.IFC.Export.Utility
                   // solid.Volume can throw an exception.  In this case, we don't really care;
                   // there is geometry there, and we will export it best we can.
                }
-
-               solidMeshCapsule.AddSolid(solid);
+               IList<Solid> splitVolumes = GeometryUtil.SplitVolumes(geometryObject as Solid);
+               foreach (Solid solid in splitVolumes)
+                  solidMeshCapsule.AddSolid(solid);
             }
             else
             {
