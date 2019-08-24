@@ -387,6 +387,11 @@ namespace Revit.IFC.Export.Utility
             Arc arc = curve as Arc;
             xDirection = arc.XDirection;
          }
+         else if (curve is Ellipse)
+         {
+            Ellipse ellipse = curve as Ellipse;
+            xDirection = ellipse.XDirection;
+         }
          else
          {
             Transform trf = curve.ComputeDerivatives(curveBounds.Start, false);
@@ -426,7 +431,7 @@ namespace Revit.IFC.Export.Utility
          }
          SolidMeshGeometryInfo geometryInfo = new SolidMeshGeometryInfo();
          // call to recursive helper method to obtain all solid and mesh geometry within geomElemToUse
-         CollectSolidMeshGeometry(geomElemToUse, trf, geometryInfo);
+         CollectSolidMeshGeometry(geomElemToUse, null, trf, geometryInfo);
          return geometryInfo;
       }
 
@@ -541,9 +546,11 @@ namespace Revit.IFC.Export.Utility
       /// This is a private helper method for the GetSolidMeshGeometry type collection methods.
       /// </remarks>
       /// <param name="geomElem">The GeometryElement we are collecting solids and meshes from.</param>
+      /// <param name="containingElement">The element that contains the geomElem.  It can be null.</param>
       /// <param name="trf">The initial Transform applied on the GeometryElement.</param>
       /// <param name="solidMeshCapsule">The SolidMeshGeometryInfo object that contains the lists of collected solids and meshes.</param>
-      private static void CollectSolidMeshGeometry(GeometryElement geomElem, Transform trf, SolidMeshGeometryInfo solidMeshCapsule)
+      private static void CollectSolidMeshGeometry(GeometryElement geomElem, 
+         Element containingElement, Transform trf, SolidMeshGeometryInfo solidMeshCapsule)
       {
          if (geomElem == null)
             return;
@@ -558,22 +565,21 @@ namespace Revit.IFC.Export.Utility
          // iterate through the GeometryObjects contained in the GeometryElement
          foreach (GeometryObject geomObj in currGeomElem)
          {
-            Solid geometryObject = geomObj as Solid;
-            if (geometryObject != null && geometryObject.Faces.Size > 0)
+            Solid solid = geomObj as Solid;
+            if (solid != null && solid.Faces.Size > 0)
             {
-               try
-               {
-                  if (geometryObject.Volume <= MathUtil.Eps() && geometryObject.Faces.Size == 0)
-                     continue;
-               }
-               catch
-               {
-                  // solid.Volume can throw an exception.  In this case, we don't really care;
-                  // there is geometry there, and we will export it best we can.
-               }
-               IList<Solid> splitVolumes = GeometryUtil.SplitVolumes(geometryObject as Solid);
-               foreach (Solid solid in splitVolumes)
-                  solidMeshCapsule.AddSolid(solid);
+               //try
+               //{
+               //   if (solid.Volume <= MathUtil.Eps())
+               //      continue;
+               //}
+               //catch
+               //{
+               //   // solid.Volume can throw an exception.  In this case, we don't really care;
+               //   // there is geometry there, and we will export it best we can.
+               //}
+
+               solidMeshCapsule.AddSolid(solid, containingElement);
             }
             else
             {
@@ -592,7 +598,8 @@ namespace Revit.IFC.Export.Utility
                      if (instanceSymbol != null && instanceSymbol.Count() != 0)
                      {
                         Transform instanceTransform = localTrf.Multiply(inst.Transform);
-                        CollectSolidMeshGeometry(instanceSymbol, instanceTransform, solidMeshCapsule);
+                        CollectSolidMeshGeometry(instanceSymbol, inst.Symbol, 
+                           instanceTransform, solidMeshCapsule);
                      }
                   }
                }
@@ -2415,7 +2422,7 @@ namespace Revit.IFC.Export.Utility
          {
 
             bool useSimpleBoundary = false;
-            if (!AllowComplexBoundary(lcs.BasisZ, projDir, curveLoop, null, exporterIFC.ExportAs2x2))
+            if (!AllowComplexBoundary(lcs.BasisZ, projDir, curveLoop, null))
                useSimpleBoundary = true;
 
             foreach (Curve curve in curveLoop)
@@ -2460,7 +2467,7 @@ namespace Revit.IFC.Export.Utility
          List<UV> polylinePts = new List<UV>(); // for simple case
 
          bool useSimpleBoundary = false;
-         if (!AllowComplexBoundary(lcs.BasisZ, projDir, null, curves, exporterIFC.ExportAs2x2))
+         if (!AllowComplexBoundary(lcs.BasisZ, projDir, null, curves))
             useSimpleBoundary = true;
 
          foreach (Curve curve in curves)
@@ -2931,6 +2938,17 @@ namespace Revit.IFC.Export.Utility
          }
       }
 
+      static private bool AllowedCurveForAllowComplexBoundary(Curve curve)
+      {
+         if (curve == null)
+            return false;
+
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
+            return true;
+
+         return ((curve is Line) || (curve is Arc) || (curve is Ellipse));
+      }
+
       /// <summary>
       /// Checks if complex boundary is allowed for the CurveLoop or the curve array. 
       /// </summary>
@@ -2938,22 +2956,20 @@ namespace Revit.IFC.Export.Utility
       /// <param name="projDir">The project direction.</param>
       /// <param name="curveLoop">The curve loop.</param>
       /// <param name="curves">The curve array.</param>
-      /// <param name="exportAs2x2">True to export as IFC2x2.</param>
       /// <returns>True if complex boundary is allowed.</returns>
-      static bool AllowComplexBoundary(XYZ zDir, XYZ projDir, CurveLoop curveLoop, IList<Curve> curves, bool exportAs2x2)
-      {
-         if (exportAs2x2 && !MathUtil.IsAlmostEqual(Math.Abs(zDir.DotProduct(projDir)), 1.0))
+      static bool AllowComplexBoundary(XYZ zDir, XYZ projDir, CurveLoop curveLoop, IList<Curve> curves)
          {
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && !MathUtil.IsAlmostEqual(Math.Abs(zDir.DotProduct(projDir)), 1.0))
             return false;
-         }
 
+         // Checks below are for IFC2x3 or earlier only.
          if (curveLoop != null)
          {
             bool allLines = true;
 
             foreach (Curve curve in curveLoop)
             {
-               if (!(curve is Line) && !(curve is Arc) && !(curve is Ellipse))
+               if (!AllowedCurveForAllowComplexBoundary(curve))
                   return false;
                if (!(curve is Line))
                   allLines = false;
@@ -2969,7 +2985,7 @@ namespace Revit.IFC.Export.Utility
 
             foreach (Curve curve in curves)
             {
-               if (!(curve is Line) && !(curve is Arc) && !(curve is Ellipse))
+               if (!AllowedCurveForAllowComplexBoundary(curve))
                   return false;
                if (!(curve is Line))
                   allLines = false;
@@ -3501,7 +3517,7 @@ namespace Revit.IFC.Export.Utility
                // encounter invalid curve, return null
                return null;
             }
-            IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveArcCenter, cartesianPoints);
+            IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveArcCenter, cartesianPoints, additionalTrf);
 
             // Create the z-direction
             IFCAnyHandle axis = VectorToIfcDirection(exporterIFC, curveArcNormal);

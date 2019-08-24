@@ -1,3 +1,4 @@
+#if IFC_OPENSOURCE
 using System.Reflection;
 
 // General Information about an assembly is controlled through the following 
@@ -8,15 +9,15 @@ using System.Reflection;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Autodesk, Inc.")]
 [assembly: AssemblyProduct("IFC Import/Exporter for Revit")]
-[assembly: AssemblyCopyright("© 2012-2017 Autodesk, Inc.All rights reserved.")]
+[assembly: AssemblyCopyright("© 2012-2019 Autodesk, Inc.All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-[assembly: AssemblyVersion("19.2.0.0")]
-[assembly: AssemblyFileVersion("19.2.0.0")]
+[assembly: AssemblyVersion("20.1.0.1")]
+[assembly: AssemblyFileVersion("20.1.0.1")]
+#endif
 
-#region Using directives
 
-#endregion
-
+// Version information can now be found in Source\Foundation\RevitENU\Version.cs
+//
 

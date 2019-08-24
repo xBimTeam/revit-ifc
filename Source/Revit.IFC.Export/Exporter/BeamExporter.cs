@@ -344,7 +344,7 @@ namespace Revit.IFC.Export.Exporter
             IList<Solid> solids = solidMeshInfo.GetSolids();
             IList<Mesh> meshes = solidMeshInfo.GetMeshes();
 
-            visibleGeomObjects = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, solids, meshes);
+            visibleGeomObjects = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, ref solids, ref meshes);
 
             // If we found solids and meshes, and they are all invisible, don't export the beam.
             // If we didn't find solids and meshes, we won't export the beam with ExportBeamAsStandardElement, but will allow the generic
@@ -379,8 +379,7 @@ namespace Revit.IFC.Export.Exporter
          string preDefinedTypeSearch = predefinedType;
          if (string.IsNullOrEmpty(preDefinedTypeSearch))
             preDefinedTypeSearch = "NULL";
-         IFCExportInfoPair exportType = new IFCExportInfoPair();
-         exportType.SetValueWithPair(IFCEntityType.IfcBeamType, preDefinedTypeSearch);
+         IFCExportInfoPair exportType = new IFCExportInfoPair(IFCEntityType.IfcBeamType, preDefinedTypeSearch);
          IFCAnyHandle beamType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(beamType))
          {
@@ -544,6 +543,7 @@ namespace Revit.IFC.Export.Exporter
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
                   beam = IFCInstanceExporter.CreateBeam(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle, extrusionCreationData.GetLocalPlacement(), prodRep, exportType.ValidatedPredefinedType);
+
 
                   IFCAnyHandle mpSetUsage;
                   if (materialProfileSet != null)

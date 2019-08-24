@@ -12,7 +12,7 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Enums;
 
-namespace Revit.IFC.Export.Exporter.PropertySet.IFC4_ADD2
+namespace Revit.IFC.Export.Exporter.PropertySet.IFC4
 {
 
 

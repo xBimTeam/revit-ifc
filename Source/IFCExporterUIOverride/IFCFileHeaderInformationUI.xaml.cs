@@ -16,26 +16,12 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+using Autodesk.UI.Windows;
+using Revit.IFC.Common.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Runtime.InteropServices;
-using System.Windows.Interop;
-using Autodesk.Revit.WPFFramework;
-using Autodesk.Revit.DB;
-using Autodesk.Revit.UI;
-using Autodesk.Revit.UI.Events;
-
-using Revit.IFC.Common.Extensions;
 
 
 namespace BIM.IFC.Export.UI
@@ -114,8 +100,6 @@ namespace BIM.IFC.Export.UI
       {
          Close();
       }
-
-
 
       /// <summary>
       /// Initialization of File Header tab

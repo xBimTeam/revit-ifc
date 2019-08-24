@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ifc="http://www.buildingsmart-tech.org/ifcXML/IFC4/Add2" targetNamespace="http://www.buildingsmart-tech.org/ifcXML/IFC4/Add2" elementFormDefault="qualified" attributeFormDefault="unqualified" >
-<!-- created with IFCDOC 10.7 at buildingsmart-tech.org -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ifc="http://www.buildingsmart-tech.org/ifc/IFC4/Add2TC1" targetNamespace="http://www.buildingsmart-tech.org/ifc/IFC4/Add2TC1" elementFormDefault="qualified" attributeFormDefault="unqualified" >
+<!-- created with IFCDOC 11.7 at buildingsmart-tech.org -->
 
 <!--
 Copyright by:
-buildingSMART International Limited, 1996-2016
+buildingSMART International Limited, 1996-2017
 
 Any technical documentation made available by buildingSMART International Limited
 is the copyrighted work of buildingSMART International Limited and is owned by the 
@@ -9619,6 +9619,7 @@ of the material. The information contained in this document is subject to change
 		<xs:choice>
 			<xs:element ref="ifc:IfcCompositeCurveOnSurface"/>
 			<xs:element ref="ifc:IfcPcurve"/>
+			<xs:element ref="ifc:IfcSurfaceCurve"/>
 		</xs:choice>
 	</xs:group>
 	<xs:group name="IfcCurveOrEdgeCurve">

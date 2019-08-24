@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Xml;
+using System.Xml.Schema;
 using Autodesk.Revit.DB;
 
 namespace Revit.IFC.Common.Utility
@@ -15,11 +17,15 @@ namespace Revit.IFC.Common.Utility
    public class IfcSchemaEntityTree
    {
       static private IDictionary<string, IfcSchemaEntityNode> m_IfcEntityDict = null;
+      static private IDictionary<string, IList<string>> m_PredefTypeEnum = null;
 
       static HashSet<IfcSchemaEntityNode> rootNodes = new HashSet<IfcSchemaEntityNode>();
 
       static string loadedIfcSchemaVersion = "";
 
+      /// <summary>
+      /// The Dictionary to the IFC schema entities
+      /// </summary>
       static public IDictionary<string, IfcSchemaEntityNode> IfcEntityDict
       {
          get
@@ -30,6 +36,31 @@ namespace Revit.IFC.Common.Utility
                m_IfcEntityDict = new SortedDictionary<string, IfcSchemaEntityNode>(comparer);
             }
             return m_IfcEntityDict;
+         }
+      }
+
+      static public IDictionary<string, IList<string>> PredefinedTypeEnumDict
+      {
+         get
+         {
+            if (m_PredefTypeEnum == null)
+               m_PredefTypeEnum = new Dictionary<string, IList<string>>();
+            return m_PredefTypeEnum;
+         }
+      }
+
+      static public void AddPredefinedTypeEnum(string enumType, IList<string> enumList)
+      {
+         if (enumType == null || enumList == null || enumList.Count == 0)
+            return;
+
+         if (m_PredefTypeEnum.ContainsKey(enumType))
+         {
+            m_PredefTypeEnum[enumType] = enumList;
+         }
+         else
+         {
+            m_PredefTypeEnum.Add(enumType, enumList);
          }
       }
 
@@ -44,6 +75,7 @@ namespace Revit.IFC.Common.Utility
 
          // It is a new schema or the first time
          IfcEntityDict.Clear();
+         PredefinedTypeEnumDict.Clear();
          rootNodes.Clear();
          loadedIfcSchemaVersion = "";
       }
@@ -83,33 +115,57 @@ namespace Revit.IFC.Common.Utility
             case IFCVersion.IFC4:
             case IFCVersion.IFC4DTV:
             case IFCVersion.IFC4RV:
-               schemaFile = "IFC4_ADD2.xsd";
+               schemaFile = "IFC4.xsd";
                break;
             default:
-               schemaFile = "IFC4_ADD1.xsd";
+               schemaFile = "IFC4.xsd";
                break;
          }
          return schemaFile;
       }
 
+      /// <summary>
+      /// Get the IFC entity Dictionary for a particular IFC version
+      /// </summary>
+      /// <param name="ifcFileVersion">the IFC version</param>
+      /// <returns>the entity Dictionary</returns>
       public static IDictionary<string, IfcSchemaEntityNode> GetEntityDictFor(IFCVersion ifcFileVersion)
       {
          string schemaFile = SchemaFileName(ifcFileVersion);
          return GetEntityDictFor(schemaFile);
       }
 
+      /// <summary>
+      /// Get the IFC entity Dictionary for a particular IFC version from the schema file
+      /// </summary>
+      /// <param name="schemaFile">the schema file name</param>
+      /// <returns>the entity Dictionary</returns>
       public static IDictionary<string, IfcSchemaEntityNode> GetEntityDictFor(string schemaFile)
       { 
          if (string.IsNullOrEmpty(loadedIfcSchemaVersion) || !loadedIfcSchemaVersion.Equals(schemaFile, StringComparison.InvariantCultureIgnoreCase))
          {
             // Process IFCXml schema here, then search for IfcProduct and build TreeView beginning from that node. Allow checks for the tree nodes. Grey out (and Italic) the abstract entity
-            string schemaLoc = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
-            schemaFile = Path.Combine(schemaLoc, schemaFile);
-            FileInfo schemaFileInfo = new FileInfo(schemaFile);
+            string schemaFilePath;
+            FileInfo schemaFileInfo;
 
-            bool newLoad = ProcessIFCXMLSchema.ProcessIFCSchema(schemaFileInfo);
-            if (newLoad)
-               loadedIfcSchemaVersion = Path.GetFileName(schemaFile);
+#if IFC_OPENSOURCE
+            // For the open source code, search it from the IfcExporter install folder
+            string schemaLoc = Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location);
+            schemaFilePath = Path.Combine(schemaLoc, schemaFile);
+            schemaFileInfo = new FileInfo(schemaFilePath);
+            if (!schemaFileInfo.Exists)
+#endif
+            {
+               schemaFilePath = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\" + schemaFile);
+               schemaFileInfo = new FileInfo(schemaFilePath);
+            }
+
+            if (schemaFileInfo.Exists)
+            {
+               bool newLoad = ProcessIFCXMLSchema.ProcessIFCSchema(schemaFileInfo);
+               if (newLoad)
+                  loadedIfcSchemaVersion = Path.GetFileName(schemaFile);
+            }
          }
 
          return EntityDict;
@@ -120,7 +176,7 @@ namespace Revit.IFC.Common.Utility
       /// </summary>
       /// <param name="entityName">the entity name</param>
       /// <param name="parentNodeName">the name of the supertype entity</param>
-      static public void Add(string entityName, string parentNodeName, bool isAbstract = false)
+      static public void Add(string entityName, string parentNodeName, string predefTypeEnum, bool isAbstract = false)
       {
          if (string.IsNullOrEmpty(entityName))
             return;
@@ -152,7 +208,7 @@ namespace Revit.IFC.Common.Utility
          {
             if (parentNode != null)
             {
-               entityNode = new IfcSchemaEntityNode(entityName, parentNode, abstractEntity: isAbstract);
+               entityNode = new IfcSchemaEntityNode(entityName, parentNode, predefTypeEnum, abstractEntity: isAbstract);
                parentNode.AddChildNode(entityNode);
             }
             else
@@ -273,6 +329,51 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
+      /// Collect all the supertype of an entity node
+      /// </summary>
+      /// <param name="entityName">the entity</param>
+      /// <param name="stopNode">array of the stop node(s)</param>
+      /// <returns>List of the supertypes</returns>
+      static public IList<IfcSchemaEntityNode> FindAllSuperTypes(string entityName, params string[] stopNode)
+      {
+         IList<IfcSchemaEntityNode> res = new List<IfcSchemaEntityNode>();
+
+         IfcSchemaEntityNode entNode = Find(entityName);
+
+         if (entNode != null)
+         {
+            // return the list when it reaches the stop node
+            foreach (string stopCond in stopNode)
+               if (entNode.Name.Equals(stopCond, StringComparison.InvariantCultureIgnoreCase))
+                  return res;
+
+            bool continueSearch = true;
+            while (continueSearch)
+            {
+               entNode = entNode.GetParent();
+               // no more parent node to get
+               if (entNode == null)
+                  break;
+
+               // Stop the search when it reaches the stop node
+               foreach (string stopCond in stopNode)
+               {
+                  if (entNode.Name.Equals(stopCond, StringComparison.InvariantCultureIgnoreCase))
+                  {
+                     continueSearch = false;
+                     break;
+                  }
+               }
+               if (entNode != null)
+               {
+                  res.Add(entNode);
+               }
+            }
+         }
+         return res;
+      }
+
+      /// <summary>
       /// Check whether an entity is a subtype of another entity
       /// </summary>
       /// <param name="subTypeName">candidate of the subtype entity name</param>
@@ -292,7 +393,14 @@ namespace Revit.IFC.Common.Utility
          return false;
       }
 
-
+      /// <summary>
+      /// Check whether an entity (string) is a subtype of another entity
+      /// </summary>
+      /// <param name="context">the IFC version in context for the check</param>
+      /// <param name="subTypeName">the subtype name</param>
+      /// <param name="superTypeName">the supertype name</param>
+      /// <param name="strict">whether the subtype is strictly subtype. Set to false if it "supertype == subtype" is acceptable</param>
+      /// <returns>true if it is subtype</returns>
       static public bool IsSubTypeOf(IFCVersion context, string subTypeName, string superTypeName, bool strict = true)
       {
          var ifcEntitySchemaTree = IfcSchemaEntityTree.GetEntityDictFor(context);
@@ -331,6 +439,14 @@ namespace Revit.IFC.Common.Utility
          return false;
       }
 
+      /// <summary>
+      /// Check whether an entity (string) is a supertype of another entity
+      /// </summary>
+      /// <param name="context">the IFC version in context for the check</param>
+      /// <param name="superTypeName">the supertype name</param>
+      /// <param name="subTypeName">the subtype name</param>
+      /// <param name="strict">whether the supertype is strictly supertype. Set to false if it "supertype == subtype" is acceptable</param>
+      /// <returns>true if it is supertype</returns>
       static public bool IsSuperTypeOf(IFCVersion context, string superTypeName, string subTypeName, bool strict = true)
       {
          var ifcEntitySchemaTree = IfcSchemaEntityTree.GetEntityDictFor(context);

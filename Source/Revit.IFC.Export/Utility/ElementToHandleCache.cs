@@ -50,12 +50,17 @@ namespace Revit.IFC.Export.Utility
       /// </returns>
       public IFCAnyHandle Find(ElementId elementId)
       {
-         IFCAnyHandle handle;
+         IFCAnyHandle handle = null;
          if (m_ElementIdToHandleDictionary.TryGetValue(elementId, out handle))
          {
-            return handle;
+            // We need to make sure the handle isn't stale.  If it is, remove it. 
+            if (!IFCAnyHandleUtil.IsValidHandle(handle))
+            {
+               m_ElementIdToHandleDictionary.Remove(elementId);
+               handle = null;
          }
-         return null;
+         }
+         return handle;
       }
 
       /// <summary>
@@ -124,6 +129,20 @@ namespace Revit.IFC.Export.Utility
          if (exportType != null)
             if (!m_ELementIdAndExportType.ContainsKey(elementId))
                m_ELementIdAndExportType.Add(elementId, exportType);
+      }
+
+      /// <summary>
+      /// Delete an element from the cache
+      /// </summary>
+      /// <param name="element">the element</param>
+      public void Delete(ElementId element)
+      {
+         if (m_ElementIdToHandleDictionary.ContainsKey(element))
+         {
+            IFCAnyHandle handle = m_ElementIdToHandleDictionary[element];
+            m_ElementIdToHandleDictionary.Remove(element);
+            ExporterCacheManager.HandleToElementCache.Delete(handle);
+         }
       }
    }
 }

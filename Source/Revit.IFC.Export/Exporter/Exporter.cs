@@ -961,38 +961,38 @@ namespace Revit.IFC.Export.Exporter
          IFCFileModelOptions modelOptions = new IFCFileModelOptions();
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
          {
-            modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC2X2_ADD1.exp");
+            //modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC2X2_ADD1.exp");
+            modelOptions.SchemaFile = LocateSchemaFile("IFC2X2_ADD1.exp");
             modelOptions.SchemaName = "IFC2x2_FINAL";
          }
          else if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
          {
-            modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC4_ADD2.exp");
-
-            if (!File.Exists(modelOptions.SchemaFile))
-            {
-               modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC4_ADD1.exp");
-
-               // If the IFC4_ADD1 file does not exists it takes the IFC4 file as its default.              
-               if (!File.Exists(modelOptions.SchemaFile))
-               {
-                  modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC4.exp");
-                  ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1 = false;
-               }
-               else
-                  ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1 = true;
-            }
-            else
-               ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD2 = true;
-
+            //modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC4.exp");
+            modelOptions.SchemaFile = LocateSchemaFile("IFC4.exp");
             modelOptions.SchemaName = "IFC4";
          }
          else
          {
             // We leave IFC2x3 as default until IFC4 is finalized and generally supported across platforms.
-            modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC2X3_TC1.exp");
+            //modelOptions.SchemaFile = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM\\IFC2X3_TC1.exp");
+            modelOptions.SchemaFile = LocateSchemaFile("IFC2X3_TC1.exp");
             modelOptions.SchemaName = "IFC2x3";
          }
          return modelOptions;
+      }
+
+      private string LocateSchemaFile(string schemaFileName)
+      {
+         string filePath = null;
+#if IFC_OPENSOURCE
+         // Find the alternate schema file from the open source install folder
+         filePath = Path.Combine(Path.GetDirectoryName(Assembly.GetCallingAssembly().Location), schemaFileName);
+         if (!File.Exists(filePath))
+#endif
+         {
+            filePath = Path.Combine(DirectoryUtil.RevitProgramPath, "EDM", schemaFileName);
+         }
+         return filePath;
       }
 
       /// <summary>
@@ -1277,6 +1277,18 @@ namespace Revit.IFC.Export.Exporter
                   if (comps.Count == 0)
                      continue;
 
+                  // Special handling for a single member IfcStair. For a single Flight, export the IfcStair directly and not as an aggregate
+                  if (comps.Count == 1 && IFCAnyHandleUtil.IsSubTypeOf(comps[0], IFCEntityType.IfcStairFlight))
+                  {
+                     IFCAnyHandle flight = comps[0];
+                     IFCAnyHandle objectPlacement = IFCAnyHandleUtil.GetObjectPlacement(flight);
+                     IFCAnyHandle representation = IFCAnyHandleUtil.GetRepresentation(flight);
+                     hnd.SetAttribute("ObjectPlacement", objectPlacement);
+                     hnd.SetAttribute("Representation", representation);
+                     StairsExporter.DeleteStairFlightData(flight);
+                  }
+                  else
+                  {
                   Element elem = document.GetElement(stairRamp.Key);
                   string guid = GUIDUtil.CreateSubElementGUID(elem, (int)IFCStairSubElements.ContainmentRelation);
                   if (locallyUsedGUIDs.Contains(guid))
@@ -1286,6 +1298,7 @@ namespace Revit.IFC.Export.Exporter
 
                   ExporterUtil.RelateObjects(exporterIFC, guid, hnd, comps);
                }
+            }
             }
 
             ProjectInfo projectInfo = document.ProjectInformation;
@@ -1561,6 +1574,9 @@ namespace Revit.IFC.Export.Exporter
             // create material associations
             foreach (IFCAnyHandle materialHnd in ExporterCacheManager.MaterialRelationsCache.Keys)
             {
+               // In some specific cased the reference object might have been deleted. Clear those from the Type cache first here
+               ExporterCacheManager.MaterialRelationsCache.CleanRefObjects(materialHnd);
+
                IFCInstanceExporter.CreateRelAssociatesMaterial(file, GUIDUtil.CreateGUID(), ownerHistory,
                    null, null, ExporterCacheManager.MaterialRelationsCache[materialHnd], materialHnd);
             }
@@ -1568,6 +1584,9 @@ namespace Revit.IFC.Export.Exporter
             // create type relations
             foreach (IFCAnyHandle typeObj in ExporterCacheManager.TypeRelationsCache.Keys)
             {
+               // In some specific cased the reference object might have been deleted. Clear those from the Type cache first here
+               ExporterCacheManager.TypeRelationsCache.CleanRefObjects(typeObj);
+
                IFCInstanceExporter.CreateRelDefinesByType(file, GUIDUtil.CreateGUID(), ownerHistory,
                    null, null, ExporterCacheManager.TypeRelationsCache[typeObj], typeObj);
             }
@@ -1836,6 +1855,12 @@ namespace Revit.IFC.Export.Exporter
                }
             }
 
+            // Delete handles that are marked for removal
+            foreach (IFCAnyHandle handleToDel in ExporterCacheManager.HandleToDeleteCache)
+            {
+               handleToDel.Delete();
+            }
+
             // Potentially modify elements with GUID values.
             if (ExporterCacheManager.GUIDsToStoreCache.Count > 0 && !ExporterCacheManager.ExportOptionsCache.ExportingLink)
             {
@@ -2043,36 +2068,10 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
-      //private long GetCreationDate(Document document)
-      //{
-      //   string pathName = document.PathName;
-      //   if (!String.IsNullOrEmpty(pathName))
-      //   {
-      //      if (document.IsWorkshared)
-      //      {
-      //         // A central model will return itself as a central model.
-      //         ModelPath centralModelPath = document.GetWorksharingCentralModelPath();
-      //         // If the ModelPath is actually a file path, then the model is not server based.
-      //         bool isAFilePath = centralModelPath is FilePath;
-      //         if (!isAFilePath)
-      //         {
-      //            //This is just a temporary fix for SPR#226541, currently it's unable to get the FileInfo of a server based file stored at server.
-      //            //Should server based file stored at server support this functionality and how to support will be tracked by SPR#226761. 
-      //            return 0;
-      //         }
-      //      }
-      //      FileInfo fileInfo = new FileInfo(pathName);
-      //      DateTime creationTimeUtc = fileInfo.CreationTimeUtc;
-      //      // The IfcTimeStamp is measured in seconds since 1/1/1970.  As such, we divide by 10,000,000 (100-ns ticks in a second)
-      //      // and subtract the 1/1/1970 offset.
-      //      return creationTimeUtc.ToFileTimeUtc() / 10000000 - 11644473600;
-      //   }
-      //   return 0;
-      //}
       private long GetCreationDate(Document document)
       {
          string pathName = document.PathName;
-         // If this is non a locally saved file, we can't get the creation date.
+         // If this is not a locally saved file, we can't get the creation date.
          // This will require future work to get this, but it is very minor.
          DateTime creationTimeUtc = DateTime.Now;
          try
@@ -3313,6 +3312,35 @@ namespace Revit.IFC.Export.Exporter
             unitSet.Add(frictionLossUnit);
          }
 
+         // Area/Planar Force - support N/m2 only, and Linear Force - support N/m only
+         {
+            ISet<IFCAnyHandle> elements = new HashSet<IFCAnyHandle>();
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, massSIUnit, 1));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, lenSIBaseUnit, 1));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, timeSIUnit, -2));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, lenSIBaseUnit, -1));
+
+            IFCAnyHandle linearForceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
+                IFCDerivedUnitEnum.LinearForceUnit, null);
+
+            double linearForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_NEWTONS_PER_METER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_LinearForce, linearForceUnit, linearForceFactor, 0.0);
+            unitSet.Add(linearForceUnit);
+
+            elements = new HashSet<IFCAnyHandle>();
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, massSIUnit, 1));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, lenSIBaseUnit, 1));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, timeSIUnit, -2));
+            elements.Add(IFCInstanceExporter.CreateDerivedUnitElement(file, lenSIBaseUnit, -2));
+
+            IFCAnyHandle planarForceUnit = IFCInstanceExporter.CreateDerivedUnit(file, elements,
+                IFCDerivedUnitEnum.PlanarForceUnit, null);
+
+            double planarForceFactor = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_NEWTONS_PER_SQUARE_METER);
+            ExporterCacheManager.UnitsCache.AddUnit(UnitType.UT_AreaForce, planarForceUnit, planarForceFactor, 0.0);
+            unitSet.Add(planarForceUnit);
+         }
+
          // GSA only units.
          if (exportToCOBIE)
          {
@@ -3539,9 +3567,10 @@ namespace Revit.IFC.Export.Exporter
                {
                   IFCAnyHandle buildingStoreyHandle = levelInfo.GetBuildingStorey();
                   buildingStories.Add(buildingStoreyHandle);
+                  IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcBuildingStorey);
 
                   // Add Property set, quantities and classification of Building Storey also to IFC
-                  productWrapper.AddElement(level, buildingStoreyHandle, levelInfo, null, false);
+                  productWrapper.AddElement(level, buildingStoreyHandle, levelInfo, null, false, exportInfo);
 
                   ExporterUtil.ExportRelatedProperties(exporterIFC, level, productWrapper);
                }
@@ -3597,8 +3626,21 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle relativePlacement = null;
          if (ExporterCacheManager.ExportOptionsCache.ExportingLink)
          {
+            ExportOptionsCache.SiteTransformBasis basis = ExporterCacheManager.ExportOptionsCache.SiteTransformation;
+            Transform linkTrfToUse = null;
+            if (basis == ExportOptionsCache.SiteTransformBasis.Shared && 
+               !ExporterCacheManager.ExportOptionsCache.IncludeSiteElevation)
+            {
             Transform linkTrf = ExporterCacheManager.ExportOptionsCache.GetLinkInstanceTransform(0);
-            relativePlacement = ExporterUtil.CreateAxis2Placement3D(file, linkTrf.Origin, linkTrf.BasisZ, linkTrf.BasisX);
+               XYZ buildingZOffset = new XYZ(0, 0, linkTrf.Origin.Z);
+               linkTrfToUse = Transform.CreateTranslation(buildingZOffset);
+            }
+            else
+            {
+               linkTrfToUse = Transform.Identity;
+            }
+            relativePlacement = ExporterUtil.CreateAxis2Placement3D(file,
+               linkTrfToUse.Origin, linkTrfToUse.BasisZ, linkTrfToUse.BasisX);
          }
          else
             relativePlacement = ExporterUtil.CreateAxis2Placement3D(file);

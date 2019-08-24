@@ -95,7 +95,8 @@ namespace Revit.IFC.Export.Utility
                   openingPlacement, openingRep);
                IFCAnyHandleUtil.OverrideNameAttribute(openingElement, openingName);
                IFCAnyHandleUtil.SetAttribute(openingElement, "ObjectType", openingObjectType);
-               wrapper.AddElement(null, openingElement, setter, extraParams, true);
+               IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcOpeningElement);
+               wrapper.AddElement(null, openingElement, setter, extraParams, true, exportInfo);
                if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities && (extraParams != null))
                   PropertyUtil.CreateOpeningQuantities(exporterIFC, openingElement, extraParams);
 
@@ -249,6 +250,23 @@ namespace Revit.IFC.Export.Utility
                parentHandle = elementHandles[0];
 
             bool isDoorOrWindowOpening = IsDoorOrWindowOpening(exporterIFC, openingElem, element);
+            bool insertHasHost = false;
+            bool insertInThisHost = false;
+            if (openingElem is FamilyInstance && element is Wall)
+            {
+               string ifcEnumType;
+               IFCExportInfoPair exportType = ExporterUtil.GetExportType(exporterIFC, openingElem, out ifcEnumType);
+               Element instHost = (openingElem as FamilyInstance).Host;
+               insertHasHost = (instHost != null);
+               insertInThisHost = (insertHasHost && instHost.Id == element.Id);
+               isDoorOrWindowOpening = 
+                  insertInThisHost &&
+                  (exportType.ExportInstance == IFCEntityType.IfcDoor || 
+                  exportType.ExportType == IFCEntityType.IfcDoorType || 
+                  exportType.ExportInstance == IFCEntityType.IfcWindow || 
+                  exportType.ExportType == IFCEntityType.IfcWindowType);
+            }
+
             if (isDoorOrWindowOpening && currentWallIsHost)
             {
                DoorWindowDelayedOpeningCreator delayedCreator =
@@ -260,9 +278,12 @@ namespace Revit.IFC.Export.Utility
                }
             }
 
-            // If the opening is "filled" by another element (either a door or window as determined above, 
-            // or an embedded wall, then we can't use the element GUID for the opening. 
-            bool canUseElementGUID = !isDoorOrWindowOpening && !(openingElem is Wall);
+            // If the opening is "filled" by another element (either a door or window as 
+            // determined above, or an embedded wall, then we can't use the element GUID 
+            // for the opening. 
+            bool canUseElementGUID = (!insertHasHost || insertInThisHost) && 
+               !isDoorOrWindowOpening && 
+               !(openingElem is Wall);
 
             IList<Solid> solids = openingData.GetOpeningSolids();
             foreach (Solid solid in solids)
@@ -384,6 +405,7 @@ namespace Revit.IFC.Export.Utility
 
          IFCAnyHandle openingHnd = IFCInstanceExporter.CreateOpeningElement(exporterIFC, hostElement, openingGUID, ownerHistory,
             openingPlacement, prodRep);
+         IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcOpeningElement, openingObjectType);
          IFCAnyHandleUtil.OverrideNameAttribute(openingHnd, openingName);
          IFCAnyHandleUtil.SetAttribute(openingHnd, "ObjectType", openingObjectType);
          if (ExporterCacheManager.ExportOptionsCache.ExportBaseQuantities)
@@ -395,7 +417,7 @@ namespace Revit.IFC.Export.Utility
             if (GUIDUtil.IsGUIDFor(insertElement, openingGUID))
                elementForProperties = insertElement;
 
-            localWrapper.AddElement(insertElement, openingHnd, setter, extrusionCreationData, true);
+            localWrapper.AddElement(insertElement, openingHnd, setter, extrusionCreationData, true, exportInfo);
          }
 
          string voidGuid = GUIDUtil.CreateGUID();
@@ -447,6 +469,7 @@ namespace Revit.IFC.Export.Utility
             openingName = NamingUtil.GetNameOverride(hostElement, NamingUtil.CreateIFCObjectName(exporterIFC, hostElement));
          IFCAnyHandle openingHnd = IFCInstanceExporter.CreateOpeningElement(exporterIFC, null, openingGUID, ownerHistory,
              ExporterUtil.CreateLocalPlacement(file, hostPlacement, null), openingProdRepHnd);
+         IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcOpeningElement, openingObjectType);
          IFCAnyHandleUtil.OverrideNameAttribute(openingHnd, openingName);
          IFCAnyHandleUtil.SetAttribute(openingHnd, "ObjectType", openingObjectType);
          IFCExtrusionCreationData ecData = null;
@@ -473,7 +496,7 @@ namespace Revit.IFC.Export.Utility
             if (GUIDUtil.IsGUIDFor(insertElement, openingGUID))
                elementForProperties = insertElement;
 
-            localWrapper.AddElement(elementForProperties, openingHnd, setter, ecData, true);
+            localWrapper.AddElement(elementForProperties, openingHnd, setter, ecData, true, exportInfo);
          }
 
          string voidGuid = GUIDUtil.CreateGUID();

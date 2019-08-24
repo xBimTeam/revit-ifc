@@ -929,6 +929,7 @@ namespace Revit.IFC.Export.Exporter
          }
 
          IFCAnyHandle spaceHnd = null;
+         IFCExportInfoPair exportInfo = new IFCExportInfoPair();
          using (IFCExtrusionCreationData extraParams = new IFCExtrusionCreationData())
          {
             extraParams.SetLocalPlacement(localPlacement);
@@ -976,13 +977,18 @@ namespace Revit.IFC.Export.Exporter
                                              ExporterCacheManager.OwnerHistoryHandle,
                                              extraParams.GetLocalPlacement(), repHnd, IFCElementComposition.Element,
                                              internalOrExternal);
-
+               exportInfo.SetValueWithPair(IFCEntityType.IfcSpace);
+               if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
+               {
+                  IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(spatialElement, exportInfo, file, ExporterCacheManager.OwnerHistoryHandle, exportInfo.ValidatedPredefinedType, productWrapper);
+                  ExporterCacheManager.TypeRelationsCache.Add(type, spaceHnd);
+               }
                transaction2.Commit();
             }
 
             if (spaceHnd != null)
             {
-               productWrapper.AddSpace(spatialElement, spaceHnd, levelInfo, extraParams, true);
+               productWrapper.AddSpace(spatialElement, spaceHnd, levelInfo, extraParams, true, exportInfo);
                if (isArea)
                {
                   Element areaScheme = spatialElementAsArea.AreaScheme;
