@@ -217,7 +217,8 @@ namespace Revit.IFC.Export.Exporter
                      siteSharedCoordinatesTrf = Transform.CreateTranslation(new XYZ(-xyz.X, -xyz.Y, unscaledElevation - xyz.Z));
                   }
                   else
-                     siteSharedCoordinatesTrf = projLocation.GetTransform().Inverse;
+                     //siteSharedCoordinatesTrf = projLocation.GetTransform().Inverse;
+                     siteSharedCoordinatesTrf = Transform.CreateTranslation(projLocation.GetTransform().Inverse.Origin);
                }
 
                if (!siteSharedCoordinatesTrf.IsIdentity)
