@@ -2141,10 +2141,10 @@ namespace Revit.IFC.Export.Exporter
          if (transformBasis == ExportOptionsCache.SiteTransformBasis.Shared)
          {
             wcs = IFCInstanceExporter.CreateAxis2Placement3D(file, wcsOrigin, null, null);
+            ExporterUtil.GetSafeProjectPositionAngle(doc, out trueNorthAngleInRadians);
          }
          else
          {
-            ExporterUtil.GetSafeProjectPositionAngle(doc, out trueNorthAngleInRadians);
             ProjectLocation projLocation = doc.ActiveProjectLocation;
             Transform siteSharedCoordinatesTrf = projLocation == null ? Transform.Identity : projLocation.GetTransform().Inverse;
             XYZ unscaledOrigin = new XYZ(0, 0, 0);
