@@ -331,19 +331,16 @@ namespace Revit.IFC.Export.Exporter
                }
                else
                {
-                  // This part needs explaination:
-                  // The geometry of the Part is against the Project base, while the host element already contains all the IFC transforms relative to its container
-                  // To "correct" the placement so that the Part is correctly relative to the host, we need to inverse transform the Part to the host's placement 
-                  IFCAnyHandle hostHandle = ExporterCacheManager.ElementToHandleCache.Find(hostElement.Id);
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(hostHandle))
+                  if (hostElement is FamilyInstance)
                   {
+                     Transform partInECS = (hostElement as FamilyInstance).GetTransform();
+                     geometryElement = GeometryUtil.GetTransformedGeometry(geometryElement, partInECS.Inverse);
+                  }
                      if (originalPlacement == null)
                      {
-                        originalPlacement = IFCAnyHandleUtil.GetObjectPlacement(hostHandle);
-                     }
-                     Transform hostTrf = ExporterUtil.GetTransformFromLocalPlacementHnd(originalPlacement);
-                     hostTrf = ExporterUtil.UnscaleTransformOrigin(hostTrf);
-                     geometryElement = GeometryUtil.GetTransformedGeometry(geometryElement, hostTrf.Inverse);
+                     IFCAnyHandle hostHnd = ExporterCacheManager.ElementToHandleCache.Find(hostElement.Id);
+                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(hostHnd))
+                        originalPlacement = IFCAnyHandleUtil.GetObjectPlacement(hostHnd);
                   }
                   partPlacement = ExporterUtil.CreateLocalPlacement(file, originalPlacement, null);
                }
