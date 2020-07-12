@@ -1,0 +1,84 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net47;net472;net48</TargetFrameworks>    
+    <Configurations>Debug;Release</Configurations>
+    <Platforms>x64</Platforms>
+    <Version>1.0.0</Version>
+    <Authors>Xbim</Authors>
+    <Company>Xbim Ltd</Company>
+    <Copyright>© 2012-2019 Autodesk, Inc.All rights reserved.</Copyright>
+    <Description>Common functions for Revit Ifc export</Description>
+    <PackageIcon>flex_transparent.ico</PackageIcon>
+    <PackageIconUrl />
+    <ProductVersion>1.0.0.0</ProductVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+	<DefineConstants>TRACE;DEBUG;IFC_OPENSOURCE</DefineConstants>    
+    <Optimize>false</Optimize>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DefineConstants>TRACE;IFC_OPENSOURCE</DefineConstants>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net47' ">
+    <RevitVersion>2019</RevitVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net472' ">
+    <RevitVersion>2020</RevitVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net48' ">
+    <RevitVersion>2021</RevitVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net47' ">
+    <Reference Include="RevitAPI">
+      <HintPath>..\..\..\RevitAPI\2019\RevitAPI.dll</HintPath>
+    </Reference>
+    <Reference Include="RevitAPIIFC">
+      <HintPath>..\..\..\RevitAPI\2019\RevitAPIIFC.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);R$(RevitVersion)</DefineConstants>   
+    <AssemblyName>Flex.Revit.IFC.Common</AssemblyName>   
+    <RootNamespace>Revit.IFC.Common</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
+    <Reference Include="RevitAPI">
+      <HintPath>..\..\..\RevitAPI\2020\RevitAPI.dll</HintPath>
+    </Reference>
+    <Reference Include="RevitAPIIFC">
+      <HintPath>..\..\..\RevitAPI\2020\RevitAPIIFC.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+ <ItemGroup Condition=" '$(TargetFramework)' == 'net48' ">
+    <Reference Include="RevitAPI">
+      <HintPath>..\..\..\RevitAPI\2021\RevitAPI.dll</HintPath>
+    </Reference>   
+    <Reference Include="RevitAPIIFC">
+      <HintPath>..\..\..\RevitAPI\2021\RevitAPIIFC.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+ <ItemGroup>
+   <Compile Remove="Properties\AssemblyInfo.cs" />
+ </ItemGroup>
+ <ItemGroup>
+   <Folder Include="Properties\" />
+ </ItemGroup>
+ <ItemGroup>
+   <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+ </ItemGroup>
+ <ItemGroup>
+   <Reference Include="System.Web.Extensions" />
+ </ItemGroup>
+  
+</Project>

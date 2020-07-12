@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30204.135
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flex.Revit.IFC.Common", "Source\Revit.IFC.Common\Flex.Revit.IFC.Common.csproj", "{7CC3A836-4A77-4302-8271-14A275E80AC4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flex.Revit.IFC.Export", "Source\Revit.IFC.Export\Flex.Revit.IFC.Export.csproj", "{0CC7121F-E1DC-4D1A-9AD0-9BB30F1B6288}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7CC3A836-4A77-4302-8271-14A275E80AC4}.Debug|x64.ActiveCfg = Debug|x64
+		{7CC3A836-4A77-4302-8271-14A275E80AC4}.Debug|x64.Build.0 = Debug|x64
+		{7CC3A836-4A77-4302-8271-14A275E80AC4}.Release|x64.ActiveCfg = Release|x64
+		{7CC3A836-4A77-4302-8271-14A275E80AC4}.Release|x64.Build.0 = Release|x64
+		{0CC7121F-E1DC-4D1A-9AD0-9BB30F1B6288}.Debug|x64.ActiveCfg = Debug|x64
+		{0CC7121F-E1DC-4D1A-9AD0-9BB30F1B6288}.Debug|x64.Build.0 = Debug|x64
+		{0CC7121F-E1DC-4D1A-9AD0-9BB30F1B6288}.Release|x64.ActiveCfg = Release|x64
+		{0CC7121F-E1DC-4D1A-9AD0-9BB30F1B6288}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AA5C5698-F703-4171-A614-190A61434BDB}
+	EndGlobalSection
+EndGlobal
