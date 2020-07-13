@@ -72,6 +72,9 @@
    <Compile Remove="Properties\AssemblyInfo.cs" />
  </ItemGroup>
  <ItemGroup>
+   <None Remove="Revit.IFC.Common.props" />
+ </ItemGroup>
+ <ItemGroup>
    <Folder Include="Properties\" />
  </ItemGroup>
  <ItemGroup>
