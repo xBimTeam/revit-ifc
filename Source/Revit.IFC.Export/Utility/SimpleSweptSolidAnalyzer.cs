@@ -113,6 +113,12 @@ namespace Revit.IFC.Export.Utility
          if (potentialPathGeom == null)
             return Create(faces, normal);
 
+         if (!directrix.IsBound)
+         {
+            // TODO: For Steve to review
+            directrix.MakeBound(0, 1);
+         }
+
          XYZ directrixStartPt = directrix.GetEndPoint(0);
          XYZ directrixEndPt = directrix.GetEndPoint(1);
 

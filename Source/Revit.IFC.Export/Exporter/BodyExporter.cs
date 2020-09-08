@@ -1459,6 +1459,7 @@ namespace Revit.IFC.Export.Exporter
             {
                if (!(geomObject is Solid))
                {
+                  tr.RollBack();
                   return null;
                }
                HashSet<IFCAnyHandle> cfsFaces = new HashSet<IFCAnyHandle>();
@@ -1483,7 +1484,10 @@ namespace Revit.IFC.Export.Exporter
                   for (int ii = 0; ii < 2; ii++)
                   {
                      if (edge.GetFace(ii) == null)
+                     { 
+                        tr.RollBack();
                         return null;
+                     }
                   }
 
                   edgesAndCurves.Add(new KeyValuePair<Edge, Curve>(edge, currCurve));
@@ -1494,6 +1498,7 @@ namespace Revit.IFC.Export.Exporter
                   bool isValidFace = (face is PlanarFace) || (face is CylindricalFace) || (face is RuledFace) || (face is HermiteFace) || (face is RevolvedFace) || (face is ConicalFace);
                   if (!isValidFace)
                   {
+                     tr.RollBack();
                      return null;
                   }
                }
@@ -1601,6 +1606,7 @@ namespace Revit.IFC.Export.Exporter
                   GetNonSingularUVPointForRevitFace(face, out revitTestUV);
                   if (revitTestUV == null)
                   {
+                     tr.RollBack();
                      return null;
                   }
                   // Compute the normal of the FACE at revitTestUV
@@ -1610,6 +1616,7 @@ namespace Revit.IFC.Export.Exporter
                   XYZ ifcSurfaceNormalDir = testPointDerivatives.BasisX.CrossProduct(testPointDerivatives.BasisY); // May be modified below.
                   if (ifcSurfaceNormalDir.IsZeroLength())
                   {
+                     tr.RollBack();
                      return null;
                   }
                   Dictionary<EdgeArray, IList<EdgeArray>> sortedEdgeLoop = GeometryUtil.SortEdgeLoop(face.EdgeLoops, face);
@@ -1622,13 +1629,17 @@ namespace Revit.IFC.Export.Exporter
 
                   if (numberOfSortedEdgeLoop != face.EdgeLoops.Size)
                   {
+                     tr.RollBack();
                      return null;
                   }
 
                   foreach (KeyValuePair<EdgeArray, IList<EdgeArray>> pair in sortedEdgeLoop)
                   {
                      if (pair.Key == null || pair.Value == null)
+                     { 
+                        tr.RollBack();
                         return null;
+                     }
 
                      HashSet<IFCAnyHandle> bounds = new HashSet<IFCAnyHandle>();
 
@@ -1646,7 +1657,10 @@ namespace Revit.IFC.Export.Exporter
                            // Face.EdgeLoop and geomSolid.Edges return different pointers for the same edge. This can be avoided if 
                            // Equals() method is implemented for Edge
                            if (!edgeToIfcEdgeCurve.ContainsKey(edge))
+                           { 
+                              tr.RollBack();
                               return null;
+                           }
 
                            IFCAnyHandle edgeCurve = edgeToIfcEdgeCurve[edge];
 
@@ -1654,7 +1668,10 @@ namespace Revit.IFC.Export.Exporter
                            Curve curveInCurrentFace = edge.AsCurveFollowingFace(face);
 
                            if (currCurve == null || curveInCurrentFace == null)
+                           {
+                              tr.RollBack();
                               return null;
+                           }
 
                            // if the curve length is 0, ignore it.
                            if (MathUtil.IsAlmostZero(currCurve.ApproximateLength))
@@ -1662,7 +1679,10 @@ namespace Revit.IFC.Export.Exporter
 
                            // if the curve is unbound, it means that the solid may be corrupted, we shouldn't process it anymore
                            if (!currCurve.IsBound)
+                           { 
+                              tr.RollBack();
                               return null;
+                           }
 
                            // Manually comparing the curves' start points isn't ideal,
                            // though it will usually suffice in practice. Instead, AsCurveFollowingFace
@@ -1739,12 +1759,18 @@ namespace Revit.IFC.Export.Exporter
 
                      XYZ zdir = conicalFace.Axis;
                      if (zdir == null)
+                     {
+                        tr.RollBack();
                         return null;
+                     }
 
                      // Create a finite profile curve for the cone based on the bounding box.
                      BoundingBoxUV coneUV = conicalFace.GetBoundingBox();
                      if (coneUV == null)
+                     {
+                        tr.RollBack();
                         return null;
+                     }
 
                      XYZ startPoint = conicalFace.Evaluate(new UV(0, coneUV.Min.V));
                      XYZ endPoint = conicalFace.Evaluate(new UV(0, coneUV.Max.V));
@@ -1770,12 +1796,18 @@ namespace Revit.IFC.Export.Exporter
 
                      XYZ zdir = revFace.Axis;
                      if (zdir == null)
+                     {
+                        tr.RollBack();
                         return null;
+                     }
 
                      // Note that the returned curve is in the coordinate system of the face.
                      Curve curve = revFace.Curve;
                      if (curve == null)
+                     {
+                        tr.RollBack();
                         return null;
+                     }
 
                      // Create arbitrary plane with z direction as normal.
                      Plane arbitraryPlane = GeometryUtil.CreatePlaneByNormalAtOrigin(zdir);
@@ -1816,6 +1848,7 @@ namespace Revit.IFC.Export.Exporter
                         {
                            // If IsExtruded is true then both profile curves have to exist, but if one of them is null then the 
                            // input is invalid, reject here
+                           tr.RollBack();
                            return null;
                         }
 
@@ -1854,6 +1887,7 @@ namespace Revit.IFC.Export.Exporter
                         if (dir == null || MathUtil.IsAlmostZero(dir.GetLength()))
                         {
                            // The extrusion direction is either null or too small to normalize
+                           tr.RollBack();
                            return null;
                         }
                         dir = basePlaneTrf.Inverse.OfVector(dir);
@@ -1874,12 +1908,16 @@ namespace Revit.IFC.Export.Exporter
                   }
                   else
                   {
+                        tr.RollBack();
                      return null;
                   }
 
                   // If we had trouble creating a surface, stop trying.
                   if (IFCAnyHandleUtil.IsNullOrHasNoValue(surface))
+                  {
+                     tr.RollBack();
                      return null;
+                  }
 
 
                   // For Revit surfaces that are converted to IFC spline surfaces or IFC extrusions, CreateNURBSSurfaceFromFace and CreateSurfaceOfLinearExtrusion create a IFC surfaces with the same 
@@ -1906,6 +1944,7 @@ namespace Revit.IFC.Export.Exporter
             }
             catch
             {
+               tr.RollBack();
                return null;
             }
          }

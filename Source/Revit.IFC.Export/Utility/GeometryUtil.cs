@@ -3249,6 +3249,7 @@ namespace Revit.IFC.Export.Utility
                   double distEndToEnd = tessellatedEdge[tessellatedEdge.Count - 1].DistanceTo(tessellatedLoop[tessellatedLoop.Count - 1]);
                   double distStartToEnd = tessellatedEdge[0].DistanceTo(tessellatedLoop[tessellatedLoop.Count - 1]);
 
+                  // TODO: For Steve to review (periodic edge curve?)
                   double minDist = Math.Min(Math.Min(distEndToStart, distStartToStart), Math.Min(distEndToEnd, distStartToEnd));
                   double uvTol = ExporterCacheManager.Document.Application.VertexTolerance;
                   if (minDist > uvTol)
