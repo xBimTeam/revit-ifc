@@ -234,17 +234,17 @@ namespace Revit.IFC.Export.Toolkit
       {
          if (typeHandle.IsSubTypeOf("IFCTYPEOBJECT"))
          {
-         IFCAnyHandleUtil.ValidateSubTypeOf(propertySets, true, IFCEntityType.IfcPropertySetDefinition);
+            IFCAnyHandleUtil.ValidateSubTypeOf(propertySets, true, IFCEntityType.IfcPropertySetDefinition);
 
-         string overrideApplicableOccurrence = null;
-         if (revitType != null)
-         {
-            overrideApplicableOccurrence = NamingUtil.GetOverrideStringValue(revitType, "IfcApplicableOccurrence", applicableOccurrence);
-            IFCAnyHandleUtil.SetAttribute(typeHandle, "ApplicableOccurrence", overrideApplicableOccurrence);
-         }
+            string overrideApplicableOccurrence = null;
+            if (revitType != null)
+            {
+               overrideApplicableOccurrence = NamingUtil.GetOverrideStringValue(revitType, "IfcApplicableOccurrence", applicableOccurrence);
+               IFCAnyHandleUtil.SetAttribute(typeHandle, "ApplicableOccurrence", overrideApplicableOccurrence);
+            }
 
-         if (propertySets != null && propertySets.Count > 0)
-            IFCAnyHandleUtil.SetAttribute(typeHandle, "HasPropertySets", propertySets);
+            if (propertySets != null && propertySets.Count > 0)
+               IFCAnyHandleUtil.SetAttribute(typeHandle, "HasPropertySets", propertySets);
          }
 
          if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
@@ -289,7 +289,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="tag">Tag</param>
       /// <param name="elementType">ElementType</param>
       private static void SetElementTypeComplete(IFCAnyHandle typeHandle, Element revitType,
-         string guid, IFCAnyHandle ownerHistory, string name, string description, 
+         string guid, IFCAnyHandle ownerHistory, string name, string description,
          string applicableOccurrence, HashSet<IFCAnyHandle> propertySets,
          IList<IFCAnyHandle> representationMaps, string tag,
           string elementType)
@@ -321,7 +321,7 @@ namespace Revit.IFC.Export.Toolkit
             guid = GUIDUtil.CreateGUID(revitType);
             overrideElementType = NamingUtil.GetElementTypeOverride(revitType, null);
             if (typeHandle.IsSubTypeOf("IFCELEMENTTYPE"))
-            IFCAnyHandleUtil.SetAttribute(typeHandle, "ElementType", overrideElementType);
+               IFCAnyHandleUtil.SetAttribute(typeHandle, "ElementType", overrideElementType);
          }
          else
             guid = GUIDUtil.CreateGUID();
@@ -368,17 +368,17 @@ namespace Revit.IFC.Export.Toolkit
       {
          if (typeProduct.IsSubTypeOf("IFCTYPEPRODUCT"))
          {
-         IFCAnyHandleUtil.ValidateSubTypeOf(representationMaps, true, IFCEntityType.IfcRepresentationMap);
-         if (representationMaps != null && representationMaps.Count > 0)
-         {
-            IFCAnyHandleUtil.SetAttribute(typeProduct, "RepresentationMaps", representationMaps);
-         }
+            IFCAnyHandleUtil.ValidateSubTypeOf(representationMaps, true, IFCEntityType.IfcRepresentationMap);
+            if (representationMaps != null && representationMaps.Count > 0)
+            {
+               IFCAnyHandleUtil.SetAttribute(typeProduct, "RepresentationMaps", representationMaps);
+            }
 
-         if (revitType != null)
-         {
-            string overrideTag = NamingUtil.GetTagOverride(revitType, NamingUtil.CreateIFCElementId(revitType));
-            IFCAnyHandleUtil.SetAttribute(typeProduct, "Tag", overrideTag);
-         }
+            if (revitType != null)
+            {
+               string overrideTag = NamingUtil.GetTagOverride(revitType, NamingUtil.CreateIFCElementId(revitType));
+               IFCAnyHandleUtil.SetAttribute(typeProduct, "Tag", overrideTag);
+            }
          }
 
          SetTypeObject(typeProduct, revitType, guid, ownerHistory, name, description, applicableOccurrence, propertySets);
@@ -507,7 +507,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="relatedObjects">The objects to be related to a type.</param>
       private static void ValidateRelDefines(string guid, IFCAnyHandle ownerHistory, string name, string description, ICollection<IFCAnyHandle> relatedObjects)
       {
-         if(ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
+         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 || ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
             IFCAnyHandleUtil.ValidateSubTypeOf(relatedObjects, false, IFCEntityType.IfcObject);
 
          ValidateRelationship(guid, ownerHistory);
@@ -659,7 +659,7 @@ namespace Revit.IFC.Export.Toolkit
          string objectType)
       {
          string overrideObjectType = objectType;
-         if (element!= null)
+         if (element != null)
          {
             if (string.IsNullOrEmpty(objectType))
                objectType = NamingUtil.GetFamilyAndTypeName(element);
@@ -717,7 +717,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="objectPlacement">The local placement.</param>
       /// <param name="representation">The representation object assigned to the wall.</param>
 
-      private static void SetProduct(IFCAnyHandle product, Element element, 
+      private static void SetProduct(IFCAnyHandle product, Element element,
          string guid, IFCAnyHandle ownerHistory, string name, string description,
          string objectType,
          IFCAnyHandle objectPlacement, IFCAnyHandle representation)
@@ -751,7 +751,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="description">The description.</param>
       /// <param name="objectType">The object type.</param>
       private static void SetGroup(IFCAnyHandle group,
-          string guid, IFCAnyHandle ownerHistory, string name, string description, 
+          string guid, IFCAnyHandle ownerHistory, string name, string description,
           string objectType)
       {
          SetObject(group, null, guid, ownerHistory, name, description, objectType);
@@ -780,7 +780,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="description">The description.</param>
       /// <param name="objectType">The object type.</param>
       private static void SetSystem(IFCAnyHandle system,
-          string guid, IFCAnyHandle ownerHistory, string name, string description, 
+          string guid, IFCAnyHandle ownerHistory, string name, string description,
           string objectType)
       {
          SetGroup(system, guid, ownerHistory, name, description, objectType);
@@ -812,9 +812,9 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="objectPlacement">The local placement.</param>
       /// <param name="representation">The representation object assigned to the wall.</param>
       /// <param name="allowTag">Optional parameter; if false, don't create the tag.</param>
-      private static void SetElement(IFCAnyHandle element, Element revitElement, 
+      private static void SetElement(IFCAnyHandle element, Element revitElement,
          string guid, IFCAnyHandle ownerHistory, string name, string description,
-         string objectType, 
+         string objectType,
          IFCAnyHandle objectPlacement, IFCAnyHandle representation,
          string tag)
       {
@@ -1493,9 +1493,9 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="description">The description.</param>
       /// <param name="objectType">The object type.</param>
       /// <param name="theActor">The actor.</param>
-      private static void SetActor(IFCAnyHandle actor, 
+      private static void SetActor(IFCAnyHandle actor,
          string guid, IFCAnyHandle ownerHistory, string name, string description,
-         string objectType, 
+         string objectType,
          IFCAnyHandle theActor)
       {
          SetObject(actor, null, guid, ownerHistory, name, description, objectType);
@@ -1778,7 +1778,7 @@ namespace Revit.IFC.Export.Toolkit
          else
             wallStandardCase = CreateInstance(exporterIFC.GetFile(), IFCEntityType.IfcWallStandardCase, element);
 
-         SetElement(wallStandardCase,  element, guid, ownerHistory, null, null, null, objectPlacement, representation, null);
+         SetElement(wallStandardCase, element, guid, ownerHistory, null, null, null, objectPlacement, representation, null);
 
          return wallStandardCase;
       }
@@ -2288,10 +2288,13 @@ namespace Revit.IFC.Export.Toolkit
          SetElement(stairFlight, element, guid, ownerHistory, null, null, null, objectPlacement, representation, null);
 
          string numberOfRisersAttrName = (ExporterCacheManager.ExportOptionsCache.ExportAs4) ? "NumberOfRisers" : "NumberOfRiser";
-         IFCAnyHandleUtil.SetAttribute(stairFlight, numberOfRisersAttrName, numberOfRiser);
-         IFCAnyHandleUtil.SetAttribute(stairFlight, "NumberOfTreads", numberOfTreads);
-         IFCAnyHandleUtil.SetAttribute(stairFlight, "RiserHeight", riserHeight);
-         IFCAnyHandleUtil.SetAttribute(stairFlight, "TreadLength", treadLength);
+         if (!ExporterCacheManager.ExportOptionsCache.ExportAs4)
+         {
+            IFCAnyHandleUtil.SetAttribute(stairFlight, numberOfRisersAttrName, numberOfRiser);
+            IFCAnyHandleUtil.SetAttribute(stairFlight, "NumberOfTreads", numberOfTreads);
+            IFCAnyHandleUtil.SetAttribute(stairFlight, "RiserHeight", riserHeight);
+            IFCAnyHandleUtil.SetAttribute(stairFlight, "TreadLength", treadLength);
+         }
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4)
          {
             SetSpecificEnumAttr(stairFlight, "PredefinedType", preDefinedType, "IfcStairFlightType");
@@ -2570,7 +2573,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="mapZone">Map Zone</param>
       /// <param name="mapUnit">Map Unit</param>
       /// <returns>the handle</returns>
-      public static IFCAnyHandle CreateProjectedCRS (IFCFile file, string name, string description, string geodeticDatum, 
+      public static IFCAnyHandle CreateProjectedCRS(IFCFile file, string name, string description, string geodeticDatum,
          string verticalDatum, string mapProjection, string mapZone, IFCAnyHandle mapUnit)
       {
          IFCAnyHandle projectedCRS = CreateInstance(file, IFCEntityType.IfcProjectedCRS, null);
@@ -6314,7 +6317,7 @@ namespace Revit.IFC.Export.Toolkit
          IFCAnyHandleUtil.SetAttribute(doorType, "ParameterTakesPrecedence", parameterTakesPrecedence);
          if (String.Compare(validatedOperationType, "USERDEFINED", true) == 0 && !string.IsNullOrEmpty(userDefinedOperationType))
             IFCAnyHandleUtil.SetAttribute(doorType, "UserDefinedOperationType", userDefinedOperationType);
- 
+
          SetElementType(doorType, revitType, propertySets, representationMaps);
          return doorType;
       }
@@ -6434,7 +6437,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="xAxisOrdinate">value along the northing axis in the X-Axis</param>
       /// <param name="scale">scale</param>
       /// <returns>the handle</returns>
-      public static IFCAnyHandle CreateMapConversion(IFCFile file, IFCAnyHandle sourceCRS, IFCAnyHandle targetCRS, double eastings, double northings, 
+      public static IFCAnyHandle CreateMapConversion(IFCFile file, IFCAnyHandle sourceCRS, IFCAnyHandle targetCRS, double eastings, double northings,
          double orthogonalHeight, double? xAxisAbscissa, double? xAxisOrdinate, double? scale)
       {
          IFCAnyHandleUtil.ValidateSubTypeOf(sourceCRS, false, IFCEntityType.IfcCoordinateReferenceSystem, IFCEntityType.IfcGeometricRepresentationContext);
