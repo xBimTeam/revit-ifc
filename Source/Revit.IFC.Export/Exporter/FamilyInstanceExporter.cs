@@ -522,6 +522,8 @@ namespace Revit.IFC.Export.Exporter
                                                      || (exportType.ExportInstance == IFCEntityType.IfcMember)
                                                      || (exportType.ExportInstance == IFCEntityType.IfcPile));
 
+                     //srl we are going to always use sold body and not extrusion guessing
+                     tryToExportAsExtrusion = false;
                      if (exportType.ExportInstance == IFCEntityType.IfcColumn
                         || exportType.ExportInstance == IFCEntityType.IfcMember
                         || exportType.ExportInstance == IFCEntityType.IfcBeam

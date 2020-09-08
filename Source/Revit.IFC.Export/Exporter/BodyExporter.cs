@@ -1848,7 +1848,7 @@ namespace Revit.IFC.Export.Exporter
                         // Transform the dir to follow to the face transform
                         XYZ endsDiff = secondProfileCurve.GetEndPoint(0) - firstProfileCurve.GetEndPoint(0);
 
-                        double depth = endsDiff.GetLength();
+                        double depth = UnitUtil.ScaleLength( endsDiff.GetLength());
 
                         XYZ dir = endsDiff.Normalize();
                         if (dir == null || MathUtil.IsAlmostZero(dir.GetLength()))
