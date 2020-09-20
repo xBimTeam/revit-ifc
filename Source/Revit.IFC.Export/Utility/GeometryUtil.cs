@@ -3518,7 +3518,11 @@ namespace Revit.IFC.Export.Utility
                // encounter invalid curve, return null
                return null;
             }
-            IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveArcCenter, cartesianPoints, additionalTrf);
+            // the additionalTrf has origin in IFC units and the curveArcCenter has already had the transform applied if it is not null
+            //The XYZtoIfcCartesianPoint function performs 
+            //XYZ vertexScaled = ExporterIFCUtils.TransformAndScalePoint(exporterIFC, thePoint);
+            // this will perfrom the tansformation twice and mess up the IFC data
+            IFCAnyHandle location3D = XYZtoIfcCartesianPoint(exporterIFC, curveArc.Center, cartesianPoints, additionalTrf);
 
             // Create the z-direction
             IFCAnyHandle axis = VectorToIfcDirection(exporterIFC, curveArcNormal);
@@ -3650,6 +3654,7 @@ namespace Revit.IFC.Export.Utility
             IList<IFCAnyHandle> polylineVertices = new List<IFCAnyHandle>();
             foreach (XYZ vertex in tessCurve)
             {
+               //srl surely we need to apply the additional transform here?
                IFCAnyHandle ifcVert = XYZtoIfcCartesianPoint(exporterIFC, vertex, cartesianPoints);
                polylineVertices.Add(ifcVert);
             }
