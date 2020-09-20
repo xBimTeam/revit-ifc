@@ -3655,7 +3655,7 @@ namespace Revit.IFC.Export.Utility
             foreach (XYZ vertex in tessCurve)
             {
                //srl surely we need to apply the additional transform here?
-               IFCAnyHandle ifcVert = XYZtoIfcCartesianPoint(exporterIFC, vertex, cartesianPoints);
+               IFCAnyHandle ifcVert = XYZtoIfcCartesianPoint(exporterIFC, vertex, cartesianPoints,additionalTrf);
                polylineVertices.Add(ifcVert);
             }
             ifcCurve = IFCInstanceExporter.CreatePolyline(file, polylineVertices);
